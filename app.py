@@ -96,7 +96,7 @@ if menu == "Business Location Recommendation":
 
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
-                contents=prompt
+                contents=[prompt]
             )
 
         st.success("Recommendation Complete")
