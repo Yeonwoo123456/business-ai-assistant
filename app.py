@@ -2,8 +2,7 @@ import streamlit as st
 from google import genai
 import random
 
-GEMINI_API_KEY = st.secrets["AIzaSyBnSEgxfhhnj7BfAp13sx5thzGdAvCB83o"]
-
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 locations = [
