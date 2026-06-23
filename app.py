@@ -12,20 +12,12 @@ try:
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
     client = genai.Client(api_key=GEMINI_API_KEY)
 except Exception:
-    st.error("Missing or invalid GEMINI_API_KEY in Streamlit secrets")
+    st.error("Missing GEMINI_API_KEY in Streamlit secrets")
     st.stop()
 
 locations = [
-    "District 1",
-    "District 3",
-    "District 5",
-    "District 7",
-    "District 10",
-    "Binh Thanh",
-    "Thu Duc",
-    "Tan Binh",
-    "Go Vap",
-    "Phu Nhuan"
+    "District 1", "District 3", "District 5", "District 7", "District 10",
+    "Binh Thanh", "Thu Duc", "Tan Binh", "Go Vap", "Phu Nhuan"
 ]
 
 foot_traffic = {
@@ -44,19 +36,42 @@ foot_traffic = {
 st.title("Business AI Assistant")
 st.caption("AI-Powered Startup Consulting for Vietnam")
 
-menu = st.sidebar.selectbox(
-    "Select Service",
-    [
-        "Business Location Recommendation",
-        "Foot Traffic Analysis",
-        "Trending Business Ideas"
-    ]
-)
+# -------------------------
+# SESSION STATE (MENU LOOP)
+# -------------------------
+if "page" not in st.session_state:
+    st.session_state.page = "menu"
 
-# -----------------------------
-# LOCATION RECOMMENDATION
-# -----------------------------
-if menu == "Business Location Recommendation":
+# -------------------------
+# RESET FUNCTION
+# -------------------------
+def go_menu():
+    st.session_state.page = "menu"
+
+# -------------------------
+# MENU PAGE
+# -------------------------
+if st.session_state.page == "menu":
+
+    st.subheader("Select Service")
+
+    choice = st.radio(
+        "Choose option",
+        [
+            "Business Location Recommendation",
+            "Foot Traffic Analysis",
+            "Trending Business Ideas"
+        ]
+    )
+
+    if st.button("Continue"):
+        st.session_state.page = choice
+        st.rerun()
+
+# -------------------------
+# 1. LOCATION
+# -------------------------
+elif st.session_state.page == "Business Location Recommendation":
 
     st.subheader("Business Location Recommendation")
 
@@ -83,51 +98,44 @@ Recommended Location:
 Reason:
 """
 
-        with st.spinner("Generating recommendation..."):
+        try:
+            response = client.models.generate_content(
+                model="gemini-1.5-flash-002",
+                contents=[prompt]
+            )
 
-            try:
-                response = client.models.generate_content(
-                    model="gemini-2.5-flash",
-                    contents=[prompt]
-                )
+            text = getattr(response, "text", "")
 
-                text = getattr(response, "text", None)
+            if "Reason:" in text:
+                parts = text.split("Reason:")
+                location_text = parts[0].replace("Recommended Location:", "").strip()
+                reason_text = parts[1].strip() if len(parts) > 1 else ""
+            else:
+                location_text = text
+                reason_text = ""
 
-                if not text:
-                    st.warning("Empty response from AI")
-                    st.stop()
+            st.success("Recommendation Complete")
 
-                if "Reason:" in text:
-                    parts = text.split("Reason:")
-                    location_text = parts[0].replace("Recommended Location:", "").strip()
-                    reason_text = parts[1].strip() if len(parts) > 1 else ""
-                else:
-                    location_text = text
-                    reason_text = ""
+            st.markdown("### 📍 Recommended Location")
+            st.info(location_text)
 
-                st.success("Recommendation Complete")
+            st.markdown("### 💡 Reason")
+            st.success(reason_text)
 
-                st.markdown("### 📍 Recommended Location")
-                st.info(location_text)
+        except Exception as e:
+            st.error("API request failed")
+            st.warning(str(e))
 
-                st.markdown("### 💡 Reason")
-                st.success(reason_text)
+    st.button("⬅ Back to Menu", on_click=go_menu)
 
-            except Exception as e:
-                st.error("AI request failed safely (no crash)")
-                st.warning(str(e))
-
-# -----------------------------
-# FOOT TRAFFIC
-# -----------------------------
-elif menu == "Foot Traffic Analysis":
+# -------------------------
+# 2. FOOT TRAFFIC
+# -------------------------
+elif st.session_state.page == "Foot Traffic Analysis":
 
     st.subheader("Foot Traffic Analysis")
 
-    district = st.selectbox(
-        "Select District",
-        list(foot_traffic.keys())
-    )
+    district = st.selectbox("Select District", list(foot_traffic.keys()))
 
     if st.button("Analyze Traffic"):
 
@@ -137,10 +145,12 @@ elif menu == "Foot Traffic Analysis":
         st.metric("District", district)
         st.metric("Average Daily Foot Traffic", f"{traffic:,} people")
 
-# -----------------------------
-# TRENDING IDEAS
-# -----------------------------
-elif menu == "Trending Business Ideas":
+    st.button("⬅ Back to Menu", on_click=go_menu)
+
+# -------------------------
+# 3. TRENDING
+# -------------------------
+elif st.session_state.page == "Trending Business Ideas":
 
     st.subheader("Trending Business Ideas")
 
@@ -156,23 +166,19 @@ For each idea provide:
 Keep answers concise.
 """
 
-        with st.spinner("Searching trends..."):
+        try:
+            response = client.models.generate_content(
+                model="gemini-1.5-flash-002",
+                contents=[prompt]
+            )
 
-            try:
-                response = client.models.generate_content(
-                    model="gemini-1.5-flash",
-                    contents=[prompt]
-                )
+            text = getattr(response, "text", "")
 
-                text = getattr(response, "text", None)
+            st.markdown("### 🔥 Trending Ideas")
+            st.info(text)
 
-                if not text:
-                    st.warning("Empty response from AI")
-                    st.stop()
+        except Exception as e:
+            st.error("API request failed")
+            st.warning(str(e))
 
-                st.markdown("### 🔥 Trending Ideas")
-                st.info(text)
-
-            except Exception as e:
-                st.error("AI request failed safely (no crash)")
-                st.warning(str(e))
+    st.button("⬅ Back to Menu", on_click=go_menu)
