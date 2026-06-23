@@ -2,10 +2,14 @@ import streamlit as st
 from google import genai
 import random
 
-GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+try:
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+except Exception:
+    st.error("Missing GEMINI_API_KEY in Streamlit secrets")
+    st.stop()
+
 client = genai.Client(api_key=GEMINI_API_KEY)
-st.write(st.secrets)
-st.write(GEMINI_API_KEY)
+
 locations = [
     "District 1",
     "District 3",
@@ -38,7 +42,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📈 Business AI Assistant")
+st.title("Business AI Assistant")
 st.caption("AI-Powered Startup Consulting for Vietnam")
 
 menu = st.sidebar.selectbox(
@@ -54,53 +58,45 @@ if menu == "Business Location Recommendation":
 
     st.subheader("Business Location Recommendation")
 
-    capital = st.number_input(
-        "Available Capital (USD)",
-        min_value=0,
-        value=50000
-    )
-
-    experience = st.text_input(
-        "Business Experience",
-        value="Restaurant Management"
-    )
-
-    interest = st.text_input(
-        "Interested Industry",
-        value="Cafe"
-    )
+    capital = st.number_input("Available Capital (USD)", min_value=0, value=50000)
+    experience = st.text_input("Business Experience", value="Restaurant Management")
+    interest = st.text_input("Interested Industry", value="Cafe")
 
     if st.button("Get Recommendation"):
 
         location = random.choice(locations)
 
         prompt = f"""
-        You are a startup consultant.
+You are a startup consultant.
 
-        Capital: {capital}
-        Experience: {experience}
-        Interest: {interest}
+Capital: {capital}
+Experience: {experience}
+Interest: {interest}
 
-        Recommended Location:
-        {location}
+Recommended Location:
+{location}
 
-        Return only:
+Return only:
+Recommended Location:
+Reason:
 
-        Recommended Location:
-        Reason:
-
-        Keep the answer under 2 sentences.
-        """
+Keep under 2 sentences.
+"""
 
         with st.spinner("Generating recommendation..."):
 
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=[prompt]
-            )
+            try:
+                response = client.models.generate_content(
+                    model="gemini-1.5-flash",
+                    contents=[prompt]
+                )
 
-        st.success("Recommendation Complete")
-        st.markdown(response.text)
+                st.success("Recommendation Complete")
+                st.markdown(response.text)
+
+            except Exception as e:
+                st.error("API request failed")
+                st.exception(e)
 
 elif menu == "Foot Traffic Analysis":
 
@@ -127,20 +123,25 @@ elif menu == "Trending Business Ideas":
     if st.button("Generate Ideas"):
 
         prompt = """
-        Recommend 5 trending business ideas in Vietnam.
+Recommend 5 trending business ideas in Vietnam.
 
-        For each idea provide:
-        - Business Name
-        - Why it is trending
+For each idea provide:
+- Business Name
+- Why it is trending
 
-        Keep answers concise.
-        """
+Keep answers concise.
+"""
 
         with st.spinner("Searching trends..."):
 
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
+            try:
+                response = client.models.generate_content(
+                    model="gemini-1.5-flash",
+                    contents=[prompt]
+                )
 
-        st.markdown(response.text)
+                st.markdown(response.text)
+
+            except Exception as e:
+                st.error("API request failed")
+                st.exception(e)
