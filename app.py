@@ -2,13 +2,18 @@ import streamlit as st
 from google import genai
 import random
 
+st.set_page_config(
+    page_title="Business AI Assistant",
+    page_icon="📈",
+    layout="wide"
+)
+
 try:
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+    client = genai.Client(api_key=GEMINI_API_KEY)
 except Exception:
-    st.error("Missing GEMINI_API_KEY in Streamlit secrets")
+    st.error("Missing or invalid GEMINI_API_KEY in Streamlit secrets")
     st.stop()
-
-client = genai.Client(api_key=GEMINI_API_KEY)
 
 locations = [
     "District 1",
@@ -36,12 +41,6 @@ foot_traffic = {
     "Phu Nhuan": 71000
 }
 
-st.set_page_config(
-    page_title="Business AI Assistant",
-    page_icon="📈",
-    layout="wide"
-)
-
 st.title("Business AI Assistant")
 st.caption("AI-Powered Startup Consulting for Vietnam")
 
@@ -54,6 +53,9 @@ menu = st.sidebar.selectbox(
     ]
 )
 
+# -----------------------------
+# LOCATION RECOMMENDATION
+# -----------------------------
 if menu == "Business Location Recommendation":
 
     st.subheader("Business Location Recommendation")
@@ -89,12 +91,17 @@ Reason:
                     contents=[prompt]
                 )
 
-                text = response.text
+                text = getattr(response, "text", None)
 
-                try:
-                    location_text = text.split("Reason:")[0].replace("Recommended Location:", "").strip()
-                    reason_text = text.split("Reason:")[1].strip()
-                except:
+                if not text:
+                    st.warning("Empty response from AI")
+                    st.stop()
+
+                if "Reason:" in text:
+                    parts = text.split("Reason:")
+                    location_text = parts[0].replace("Recommended Location:", "").strip()
+                    reason_text = parts[1].strip() if len(parts) > 1 else ""
+                else:
                     location_text = text
                     reason_text = ""
 
@@ -107,9 +114,12 @@ Reason:
                 st.success(reason_text)
 
             except Exception as e:
-                st.error("API request failed")
-                st.exception(e)
+                st.error("AI request failed safely (no crash)")
+                st.warning(str(e))
 
+# -----------------------------
+# FOOT TRAFFIC
+# -----------------------------
 elif menu == "Foot Traffic Analysis":
 
     st.subheader("Foot Traffic Analysis")
@@ -121,12 +131,15 @@ elif menu == "Foot Traffic Analysis":
 
     if st.button("Analyze Traffic"):
 
-        traffic = foot_traffic[district]
+        traffic = foot_traffic.get(district, 0)
 
         st.markdown("### 📊 Result")
         st.metric("District", district)
         st.metric("Average Daily Foot Traffic", f"{traffic:,} people")
 
+# -----------------------------
+# TRENDING IDEAS
+# -----------------------------
 elif menu == "Trending Business Ideas":
 
     st.subheader("Trending Business Ideas")
@@ -151,9 +164,15 @@ Keep answers concise.
                     contents=[prompt]
                 )
 
+                text = getattr(response, "text", None)
+
+                if not text:
+                    st.warning("Empty response from AI")
+                    st.stop()
+
                 st.markdown("### 🔥 Trending Ideas")
-                st.info(response.text)
+                st.info(text)
 
             except Exception as e:
-                st.error("API request failed")
-                st.exception(e)
+                st.error("AI request failed safely (no crash)")
+                st.warning(str(e))
