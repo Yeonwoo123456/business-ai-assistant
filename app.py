@@ -87,12 +87,26 @@ Keep under 2 sentences.
 
             try:
                 response = client.models.generate_content(
-                    model = "gemini-2.5-flash",
+                    model="gemini-2.5-flash",
                     contents=[prompt]
                 )
 
+                text = response.text
+
+                try:
+                    location_text = text.split("Reason:")[0].replace("Recommended Location:", "").strip()
+                    reason_text = text.split("Reason:")[1].strip()
+                except:
+                    location_text = text
+                    reason_text = ""
+
                 st.success("Recommendation Complete")
-                st.markdown(response.text)
+
+                st.markdown("### Recommended Location")
+                st.write(location_text)
+
+                st.markdown("### Reason")
+                st.write(reason_text)
 
             except Exception as e:
                 st.error("API request failed")
