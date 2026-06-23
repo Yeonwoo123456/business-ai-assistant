@@ -79,15 +79,13 @@ Recommended Location:
 Return only:
 Recommended Location:
 Reason:
-
-Keep under 2 sentences.
 """
 
         with st.spinner("Generating recommendation..."):
 
             try:
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-1.5-flash",
                     contents=[prompt]
                 )
 
@@ -102,11 +100,11 @@ Keep under 2 sentences.
 
                 st.success("Recommendation Complete")
 
-                st.markdown("### Recommended Location")
-                st.write(location_text)
+                st.markdown("### 📍 Recommended Location")
+                st.info(location_text)
 
-                st.markdown("### Reason")
-                st.write(reason_text)
+                st.markdown("### 💡 Reason")
+                st.success(reason_text)
 
             except Exception as e:
                 st.error("API request failed")
@@ -125,10 +123,9 @@ elif menu == "Foot Traffic Analysis":
 
         traffic = foot_traffic[district]
 
-        st.metric(
-            "Average Daily Foot Traffic",
-            f"{traffic:,} people"
-        )
+        st.markdown("### 📊 Result")
+        st.metric("District", district)
+        st.metric("Average Daily Foot Traffic", f"{traffic:,} people")
 
 elif menu == "Trending Business Ideas":
 
@@ -154,7 +151,8 @@ Keep answers concise.
                     contents=[prompt]
                 )
 
-                st.markdown(response.text)
+                st.markdown("### 🔥 Trending Ideas")
+                st.info(response.text)
 
             except Exception as e:
                 st.error("API request failed")
