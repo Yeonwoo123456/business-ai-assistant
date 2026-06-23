@@ -4,7 +4,8 @@ import random
 
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 client = genai.Client(api_key=GEMINI_API_KEY)
-
+st.write(st.secrets)
+st.write(GEMINI_API_KEY)
 locations = [
     "District 1",
     "District 3",
@@ -94,7 +95,7 @@ if menu == "Business Location Recommendation":
         with st.spinner("Generating recommendation..."):
 
             response = client.models.generate_content(
-                model="gemini-1.5-flash",
+                model="gemini-2.5-flash",
                 contents=prompt
             )
 
